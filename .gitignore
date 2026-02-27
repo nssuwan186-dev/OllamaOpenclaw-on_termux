@@ -1,0 +1,8 @@
+.env
+.openclaw/
+memory/
+Reports/
+Media/
+*.log
+*.bak
+.pi/
