@@ -1,68 +1,31 @@
-# agent.md — แผนที่ Workspace (The Navigator)
+# AGENTS.md — TABLE MAPPING (อัปเดต 2026-03-01)
 
-> ไฟล์นี้บอก AI ว่าข้อมูลอยู่ที่ไหน เพื่อโฟกัสการค้นหาให้ตรงจุด ประหยัด Token
+## ⚠️ ตารางที่มีข้อมูล (ใช้ได้)
+| ตาราง | rows | ใช้สำหรับ |
+|---|---|---|
+| `rooms` | 51 | ห้องว่าง/สถานะห้อง |
+| `bookings` | 205 | การจอง |
+| `dim_guests` | 1,139 | ข้อมูลลูกค้า |
+| `clean_transactions` | 981 | รายรับปัจจุบัน |
+| `fact_transactions` | 27,922 | ประวัติการเงินทั้งหมด |
+| `utility_meters` | 3 | มิเตอร์น้ำ-ไฟ |
 
----
+## ❌ ตารางว่างเปล่า (ห้ามใช้ query!)
+- `transactions` → 0 rows
+- `income_table` → 0 rows
+- `expense_table` → 0 rows
 
-## โครงสร้าง Workspace
-```
-/Workspace
-├── soul.md             ← ตัวตน บทบาท และกฎของ AI
-├── agent.md            ← ไฟล์นี้: แผนที่ Workspace
-├── tools.md            ← คู่มือการใช้เครื่องมือและฐานข้อมูล
-├── memory.md           ← ความทรงจำระยะยาว บันทึกสำคัญ
-├── .env                ← API Keys / Passwords (ห้ามแสดงค่าในแชท)
-│
-├── /Database
-│   └── hotel_account.db ← SQLite หลัก: รายรับ-รายจ่าย, จอง, ลูกค้า
-│
-├── /Media
-│   ├── /Slips          ← ภาพสลิปโอนเงิน (จัดตามเดือน)
-│   └── /Receipts       ← ใบเสร็จ / ใบกำกับภาษี
-│
-├── /Reports
-│   ├── /Monthly        ← รายงานสรุปรายเดือน (.xlsx)
-│   └── /Weekly         ← รายงานสรุปรายสัปดาห์ (.xlsx)
-│
-└── /Scripts
-    ├── import_excel.py ← นำเข้าข้อมูลจาก Excel → SQL
-    ├── summary.py      ← สร้างรายงานสรุป
-    └── slip_analyze.py ← วิเคราะห์สลิปด้วย Vision AI
-```
+## คอลัมน์จริงแต่ละตาราง
+- **rooms:** room_no, building, floor, type, price_per_night, status
+- **bookings:** booking_no, room_no, guest_id, check_in, check_out, nights, room_rate, total_amount, status, payment_channel
+- **dim_guests:** Guest_ID, Guest_Name, Phone, Nationality
+- **clean_transactions:** trans_id, date, room_no, guest_name, amount, payment_method
+- **fact_transactions:** Guest_ID, Date, Room_No, Room_Type, Grand_Total, Payment_Method
 
----
+## Relations
+- dim_guests.Guest_ID ↔ bookings.guest_id
+- rooms.room_no ↔ bookings.room_no
+- rooms.room_no ↔ clean_transactions.room_no
 
-## ฐานข้อมูล SQL (hotel_account.db)
-| ตาราง | เก็บข้อมูลอะไร |
-|---|---|
-| `rooms` | ข้อมูลห้องพักทั้งหมด (เลขห้อง, ตึก, ชั้น, ประเภท, ราคา, สถานะ) |
-| `customers` | ข้อมูลลูกค้า (รหัส, ชื่อ, เบอร์, ที่อยู่, สัญชาติ) |
-| `master_customers` | ฐานข้อมูลลูกค้า MASTER รวมทุกแหล่ง 2026 |
-| `bookings` | การจองห้อง (เลขห้อง, รหัสลูกค้า, วันเข้า, จำนวนคืน, ช่องทาง) |
-| `transactions` | รายรับ-รายจ่ายทั้งหมด (วันที่, ชื่อรายการ, เบอร์, ห้อง, จ่าย, รับ, ยอดสะสม) |
-| `employees` | ข้อมูลพนักงาน (ชื่อ, ตำแหน่ง, ประเภทจ้าง, ค่าจ้าง, เลขบัญชี) |
-| `monthly_summary` | สรุปยอดรายเดือน (รายรับรวม, รายจ่ายรวม, กำไรสุทธิ) |
-
----
-
-## ตำแหน่งข้อมูลตามประเภทคำถาม
-| ถามเรื่อง | ดูที่ |
-|---|---|
-| ยอดรายรับ-รายจ่ายวันนี้/สัปดาห์/เดือน | `transactions` table |
-| ห้องว่าง / ห้องไม่ว่าง | `rooms` + `bookings` table |
-| ลูกค้าคนนี้คือใคร | `customers` + `master_customers` table |
-| พนักงานได้ค่าจ้างเท่าไหร่ | `employees` table |
-| สลิปโอนเงิน | `/Media/Slips/` + ChromaDB |
-| รายงานรายเดือน | `/Reports/Monthly/` |
-| ประวัติเหตุการณ์สำคัญ | `memory.md` |
-
----
-
-## กฎการจัดการไฟล์
-1. **สลิปใหม่** → บันทึก SQL ก่อน → ย้ายไปที่ `/Media/Slips/YYYY-MM/`
-2. **รายงาน Excel** → บันทึกที่ `/Reports/Monthly/` หรือ `/Reports/Weekly/`
-3. **Script Python** → เก็บที่ `/Scripts/` เพื่อนำกลับมาใช้ซ้ำ
-4. **ไฟล์นำเข้า** → ลบหรือเก็บใน `/Archive/` หลังนำเข้า SQL สำเร็จ
-
----
-*agent.md | อัปเดตล่าสุดจากการนำเข้าไฟล์ใหม่*
+## DB PATH
+/data/data/com.termux/files/home/.openclaw/workspace/hotel_account.db
