@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2026-03-01T01:43:35.304592",
+    "type": "daily",
+    "file": "backup_daily_2026-03-01.db.gz",
+    "stats": {
+      "rooms": 51,
+      "bookings": 207,
+      "guests": 236,
+      "clean_transactions": 981,
+      "fact_transactions": 27922
+    }
+  },
+  {
+    "timestamp": "2026-03-01T03:18:17.482607",
+    "type": "daily",
+    "file": "backup_daily_2026-03-01.db.gz",
+    "stats": {
+      "rooms": 51,
+      "bookings": 208,
+      "guests": 237,
+      "clean_transactions": 981,
+      "fact_transactions": 27922
+    }
+  }
+]

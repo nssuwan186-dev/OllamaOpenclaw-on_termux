@@ -1,0 +1,180 @@
+# tools.md — คู่มือการใช้เครื่องมือ (The Manual)
+> อัปเดต 2026-03-01 — แก้ไข table mapping ให้ตรงกับ database จริง
+
+---
+
+## ⚠️ TABLE MAPPING (สำคัญมาก — อ่านก่อนเสมอ)
+
+| ใช้ทำอะไร | ตารางที่ถูกต้อง | หมายเหตุ |
+|---|---|---|
+| รายรับ-รายจ่ายใหม่ (บันทึกเอง) | `income_table` / `expense_table` | ยังว่างอยู่ รอบันทึกใหม่ |
+| รายรับย้อนหลัง (ประวัติ) | `clean_transactions` | 981 รายการ ✅ |
+| ข้อมูลทางการเงินทั้งหมด | `fact_transactions` | 27,922 รายการ ✅ |
+| ห้องพัก | `rooms` | 51 ห้อง ✅ |
+| การจอง | `bookings` | 205 รายการ ✅ |
+| ลูกค้า | `dim_guests` | 1,139 ราย ✅ |
+| ❌ ห้ามใช้ | `transactions` | **ว่างเปล่า 0 rows!** |
+
+---
+
+## 1. ฐานข้อมูลหลัก
+
+```python
+import sqlite3
+import pandas as pd
+DB_PATH = "/data/data/com.termux/files/home/.openclaw/workspace/Database/hotel_account.db"
+conn = sqlite3.connect(DB_PATH)
+```
+
+---
+
+## 2. ห้องพัก
+
+### ตรวจสอบห้องว่าง
+```sql
+SELECT room_no, building, floor, type, price_per_night
+FROM rooms
+WHERE status = 'Available'
+ORDER BY building, room_no;
+```
+
+### อัปเดตสถานะห้อง
+```sql
+UPDATE rooms SET status = 'Occupied' WHERE room_no = 'B106';
+UPDATE rooms SET status = 'Available' WHERE room_no = 'B106';
+```
+
+**คอลัมน์ rooms:** `room_no, building, floor, type, price_per_night, status`
+**ค่า status ที่ใช้ได้:** `Available`, `Monthly`, `Under Maintenance`
+
+---
+
+## 3. การจอง
+
+### ดูการจองปัจจุบัน
+```sql
+SELECT b.room_no, g.Guest_Name, b.check_in, b.check_out, b.nights, b.payment_channel
+FROM bookings b
+LEFT JOIN dim_guests g ON b.guest_id = g.Guest_ID
+WHERE b.check_in >= DATE('now')
+ORDER BY b.check_in, b.room_no;
+```
+
+### บันทึกการจองใหม่
+```sql
+INSERT INTO bookings (room_no, guest_id, check_in, check_out, nights, room_rate, service_fee, total_amount, status, payment_channel, booking_channel)
+VALUES ('B106', 'CM01957', '2026-03-01', '2026-03-02', 1, 400, 0, 400, 'Active', 'โอน', 'Walk-in');
+```
+
+**คอลัมน์ bookings:** `booking_no, room_no, guest_id, check_in, check_out, nights, room_rate, service_fee, total_amount, status, payment_channel, booking_channel`
+
+---
+
+## 4. รายรับ-รายจ่าย
+
+### ดูรายรับย้อนหลัง (ใช้ clean_transactions)
+```sql
+SELECT date, room_no, guest_name, amount, payment_method
+FROM clean_transactions
+ORDER BY date DESC
+LIMIT 20;
+```
+
+### สรุปรายรับรายเดือน
+```sql
+SELECT strftime('%Y-%m', date) AS เดือน,
+       COUNT(*) AS จำนวนรายการ,
+       SUM(amount) AS รายรับรวม
+FROM clean_transactions
+GROUP BY strftime('%Y-%m', date)
+ORDER BY เดือน DESC;
+```
+
+### สรุปรายรับรายเดือน (ข้อมูลประวัติศาสตร์ จาก fact_transactions)
+```sql
+SELECT Year, Month,
+       COUNT(*) AS จำนวนรายการ,
+       SUM(Grand_Total) AS รายรับรวม,
+       payment_method
+FROM fact_transactions
+WHERE Grand_Total > 0
+GROUP BY Year, Month
+ORDER BY Year DESC, Month DESC;
+```
+
+### บันทึกรายรับใหม่
+```sql
+INSERT INTO income_table (date, amount, source, note)
+VALUES ('2026-03-01', 400, 'ห้องพัก', 'B106 นาย ก.');
+```
+
+### บันทึกรายจ่ายใหม่
+```sql
+INSERT INTO expense_table (date, amount, category, vendor)
+VALUES ('2026-03-01', 500, 'ค่าน้ำ', 'การประปา');
+```
+
+---
+
+## 5. ลูกค้า
+
+### ค้นหาลูกค้า
+```sql
+SELECT Guest_ID, Guest_Name, Phone, Nationality
+FROM dim_guests
+WHERE Guest_Name LIKE '%ชื่อ%'
+   OR Phone LIKE '%เบอร์%';
+```
+
+**คอลัมน์ dim_guests:** `Guest_ID, Guest_Name, Phone, Nationality`
+
+---
+
+## 6. สร้างรายงาน Excel
+
+```python
+import pandas as pd, sqlite3
+from datetime import datetime
+
+def generate_monthly_report(db_path, month, year):
+    conn = sqlite3.connect(db_path)
+    query = f"""
+    SELECT date, room_no, guest_name, amount, payment_method
+    FROM clean_transactions
+    WHERE strftime('%m', date) = '{month:02d}'
+      AND strftime('%Y', date) = '{year}'
+    ORDER BY date
+    """
+    df = pd.read_sql(query, conn)
+    conn.close()
+    output_path = f"/data/data/com.termux/files/home/.openclaw/workspace/Reports/Monthly/รายงาน_{year}_{month:02d}.xlsx"
+    df.to_excel(output_path, index=False)
+    return output_path
+```
+
+---
+
+## 7. คำสั่ง Telegram ที่รองรับ
+
+| คำสั่ง | ผลลัพธ์ |
+|---|---|
+| `สรุปวันนี้` | รายรับ-รายจ่ายวันนี้ |
+| `สรุปเดือนนี้` | สรุปรายเดือนจาก clean_transactions |
+| `ห้องว่าง` | รายการห้อง status = Available |
+| `ลูกค้า [ชื่อ/เบอร์]` | ค้นหาจาก dim_guests |
+| `บันทึกรายรับ [จำนวน]` | INSERT ลง income_table |
+| `บันทึกรายจ่าย [จำนวน]` | INSERT ลง expense_table |
+| ส่งรูปสลิป | วิเคราะห์และบันทึกอัตโนมัติ |
+| `/new` หรือ `/reset` | เริ่ม Session ใหม่ |
+
+---
+
+## 8. Restart Protocol
+ต้อง Restart ทุกครั้งที่แก้ไข `soul.md`, `agent.md`, `tools.md`, `.env`
+
+```bash
+pkill -f 'openclaw' && sleep 2 && openclaw gateway run
+```
+
+---
+*tools.md | วิพัฒน์โฮเทล | อัปเดต 2026-03-01 — แก้ table mapping*

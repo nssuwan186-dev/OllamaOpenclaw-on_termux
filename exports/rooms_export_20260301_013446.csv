@@ -1,0 +1,52 @@
+﻿หมายเลขห้อง,ตึก,ชั้น,ประเภท,ราคาต่อคืน,สถานะ
+A101,A,1,Standard,400.0,Available
+A102,A,1,Standard,400.0,Available
+A103,A,1,Standard,400.0,Available
+A104,A,1,Standard,400.0,Available
+A105,A,1,Standard,400.0,Available
+A106,A,1,Standard Twin,500.0,Available
+A107,A,1,Standard Twin,500.0,Available
+A108,A,1,Standard Twin,500.0,Available
+A109,A,1,Standard Twin,500.0,Available
+A110,A,1,Standard Twin,500.0,Available
+A111,A,1,Standard,400.0,Available
+A201,A,2,Standard,400.0,Under Maintenance
+A202,A,2,Standard,400.0,Available
+A203,A,2,Standard,400.0,Available
+A204,A,2,Standard,3500.0,Monthly
+A205,A,2,Standard,3500.0,Monthly
+A206,A,2,Standard,3500.0,Monthly
+A207,A,2,Standard,400.0,Available
+A208,A,2,Standard,3500.0,Monthly
+A209,A,2,Standard,400.0,Available
+A210,A,2,Standard,400.0,Available
+A211,A,2,Standard,3500.0,Monthly
+B101,B,1,Standard,400.0,Available
+B102,B,1,Standard,400.0,Available
+B103,B,1,Standard,400.0,Available
+B104,B,1,Standard,400.0,Available
+B105,B,1,Standard,400.0,Available
+B106,B,1,Standard,400.0,Available
+B107,B,1,Standard,400.0,Available
+B108,B,1,Standard,400.0,Available
+B109,B,1,Standard,400.0,Available
+B110,B,1,Standard,400.0,Available
+B111,B,1,Standard Twin,500.0,Available
+B201,B,2,Standard,400.0,Available
+B202,B,2,Standard,400.0,Available
+B203,B,2,Standard,400.0,Available
+B204,B,2,Standard,400.0,Available
+B205,B,2,Standard,400.0,Available
+B206,B,2,Standard,400.0,Available
+B207,B,2,Standard,400.0,Available
+B208,B,2,Standard,400.0,Available
+B209,B,2,Standard,400.0,Available
+B210,B,2,Standard,400.0,Available
+B211,B,2,Standard,400.0,Available
+N1,N,1,Standard Twin,600.0,Available
+N2,N,1,Standard,500.0,Available
+N3,N,1,Standard,500.0,Available
+N4,N,1,Standard Twin,600.0,Available
+N5,N,1,Standard Twin,600.0,Available
+N6,N,1,Standard Twin,600.0,Available
+N7,N,1,Standard,500.0,Available
